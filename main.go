@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -19,22 +18,18 @@ type SinglePageFS struct {
 	http.FileSystem
 }
 
-var config Config
-
 func main() {
 	file, err := os.Open("config.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	data, err := io.ReadAll(file)
+	decoder := json.NewDecoder(file)
+	var config Config
+	err = decoder.Decode(&config)
 	if err != nil {
 		log.Fatal(err)
 	}
 	file.Close()
-	err = json.Unmarshal(data, &config)
-	if err != nil {
-		log.Fatal(err)
-	}
 	spfs := SinglePageFS{http.Dir(config.Path)}
 	http.Handle(config.Homepage, http.StripPrefix(config.Homepage, http.FileServer(spfs)))
 	fmt.Println("You can view it in the browser.")
